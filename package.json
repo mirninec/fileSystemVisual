@@ -1,0 +1,23 @@
+{
+  "name": "file-system-visualizer",
+  "version": "0.1.0",
+  "description": "CLI tool to generate hierarchical file system diagrams in DOT format for Graphviz visualization",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "keywords": [
+    "file-system",
+    "visualization",
+    "graphviz",
+    "dot-language",
+    "directory-structure",
+    "hierarchy-diagram",
+    "cli-tool"
+  ],
+  "author": "mirninec",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.13.8"
+  }
+}
