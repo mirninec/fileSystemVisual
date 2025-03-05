@@ -25,7 +25,7 @@
 ```sh
 # Клонируйте репозиторий
 git clone https://github.com/mirninec/fileSystemVisual.git
-cd FileSystemVisualizer
+cd FileSystemVisual
 
 # Установите TypeScript, если он у Вас не установлен глобально
 npm install typescript @types/node
