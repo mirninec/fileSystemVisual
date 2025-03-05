@@ -1,0 +1,168 @@
+digraph FileSystem {
+    rankdir = TB;
+    edge [arrowhead = none];
+    node [ fontname = "monospace"; width = 2; height = 0.75; style = "filled"; fillcolor = "lightyellow";]; 
+
+    
+    "0-0" [label="./sympleDir";width = 2.5; shape="folder";rank="min";];
+
+//======================================== a-root ========================================
+    "0-0"; "1-0"; "1-1"; "0-0" -> "1-0"; "1-0" -> "1-1";
+
+    subgraph "1-0" {
+    rank=same;
+    "1-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "1-1" [label="a-root",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+//========================================== b ===========================================
+    "1-0"; "2-0"; "2-1"; "1-0" -> "2-0"; "2-0" -> "2-1";
+
+    subgraph "2-0" {
+    rank=same;
+    "2-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "2-1" [label="b\n(4)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+    "3-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "2-0" -> "3-0"; 
+            
+//======================================== a-file ========================================
+    "2-1"; "3-1"; "3-2"; "2-1" -> "3-1"; "3-1" -> "3-2";
+
+    subgraph "3-1" {
+    rank=same;
+    "3-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "3-2" [label="a-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+    "4-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "3-0" -> "4-0"; 
+            
+//======================================== c-file ========================================
+    "3-1"; "4-1"; "4-2"; "3-1" -> "4-1"; "4-1" -> "4-2";
+
+    subgraph "4-1" {
+    rank=same;
+    "4-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "4-2" [label="c-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+    "5-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "4-0" -> "5-0"; 
+            
+//======================================= c1-file ========================================
+    "4-1"; "5-1"; "5-2"; "4-1" -> "5-1"; "5-1" -> "5-2";
+
+    subgraph "5-1" {
+    rank=same;
+    "5-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "5-2" [label="c1-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+    "6-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "5-0" -> "6-0"; 
+            
+//========================================== d ===========================================
+    "5-1"; "6-1"; "6-2"; "5-1" -> "6-1"; "6-1" -> "6-2";
+
+    subgraph "6-1" {
+    rank=same;
+    "6-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "6-2" [label="d\n(1)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+    "7-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "6-0" -> "7-0"; 
+            
+//========================================== e ===========================================
+    "6-2"; "7-2"; "7-3"; "6-2" -> "7-2"; "7-2" -> "7-3";
+
+    subgraph "7-2" {
+    rank=same;
+    "7-2" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "7-3" [label="e\n(1)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+    "8-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "7-0" -> "8-0"; 
+            
+//======================================== f-file ========================================
+    "7-3"; "8-3"; "8-4"; "7-3" -> "8-3"; "8-3" -> "8-4";
+
+    subgraph "8-3" {
+    rank=same;
+    "8-3" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "8-4" [label="f-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+//========================================== e ===========================================
+    "8-0"; "9-0"; "9-1"; "8-0" -> "9-0"; "9-0" -> "9-1";
+
+    subgraph "9-0" {
+    rank=same;
+    "9-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "9-1" [label="e\n(0)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+//================================= fileSystemVisual.dot =================================
+    "9-0"; "10-0"; "10-1"; "9-0" -> "10-0"; "10-0" -> "10-1";
+
+    subgraph "10-0" {
+    rank=same;
+    "10-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "10-1" [label="fileS...l.dot",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+//========================================== h ===========================================
+    "10-0"; "11-0"; "11-1"; "10-0" -> "11-0"; "11-0" -> "11-1";
+
+    subgraph "11-0" {
+    rank=same;
+    "11-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "11-1" [label="h\n(1)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+    "12-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "11-0" -> "12-0"; 
+            
+//======================================== a-file ========================================
+    "11-1"; "12-1"; "12-2"; "11-1" -> "12-1"; "12-1" -> "12-2";
+
+    subgraph "12-1" {
+    rank=same;
+    "12-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "12-2" [label="a-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+//======================================== x-root ========================================
+    "12-0"; "13-0"; "13-1"; "12-0" -> "13-0"; "13-0" -> "13-1";
+
+    subgraph "13-0" {
+    rank=same;
+    "13-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "13-1" [label="x-root",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+//========================================== y ===========================================
+    "13-0"; "14-0"; "14-1"; "13-0" -> "14-0"; "14-0" -> "14-1";
+
+    subgraph "14-0" {
+    rank=same;
+    "14-0" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "14-1" [label="y\n(1)",shape=folder, height=0.4, style=filled, fillcolor=lightyellow];
+    }
+        
+    "15-0"  [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "14-0" -> "15-0"; 
+            
+//======================================== a-file ========================================
+    "14-1"; "15-1"; "15-2"; "14-1" -> "15-1"; "15-1" -> "15-2";
+
+    subgraph "15-1" {
+    rank=same;
+    "15-1" [shape=point; width=0.03; style="filled"; fillcolor="black"];
+    "15-2" [label="a-file",shape=box, height=0.4, style=filled, fillcolor=lightblue];
+    }
+        
+}
