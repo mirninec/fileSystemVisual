@@ -47,11 +47,29 @@ const activeDepthLevels: boolean[] = [];
 const CONNECTOR_STYLE = '[shape=point; width=0.03; style="filled"; fillcolor="black"];'
 
 /**
+ * Тип функции для обработки имени узла.
+ * Принимает имя и максимальную длину, возвращает строку.
+ */
+type NameFormatterFn = (name: string, length: number) => string;
+
+/**
  * Основная функция программы. Строит граф файловой системы в формате DOT.
  */
 function main(): void {
-    let targetDirectory: string = process.argv[2] || process.cwd();
-    let currentDir: string = truncateName(path.basename(targetDirectory), 18);
+    // Аргументы командной строки (без первых двух служебных)
+    const args: string[] = process.argv.slice(2);
+
+    // Определяем, передан ли флаг --cut
+    const shouldCut: boolean = args.includes('--cut');
+
+    // Целевая директория — первый аргумент, не являющийся флагом
+    const dirArg: string | undefined = args.find(arg => !arg.startsWith('--'));
+    let targetDirectory: string = dirArg || process.cwd();
+
+    // Выбираем функцию форматирования имён в зависимости от флага --cut
+    const nameFormatter: NameFormatterFn = shouldCut ? truncateName : identityName;
+
+    let currentDir: string = nameFormatter(path.basename(targetDirectory), 18);
     process.chdir(targetDirectory)
     console.log(targetDirectory)
     let dotContent: string[] = [
@@ -64,12 +82,18 @@ function main(): void {
     let directoryEntries: string[] = fs.readdirSync(targetDirectory);
     if (directoryEntries.length === 0) {
         dotContent.push(`
-    "trunk0" [label="папка\\nпуста";shape="folder";rank="min";];
+    "trunk0" [label="папка\
+пуста";shape="folder";rank="min";];
 }`);
         const emptyDirFilePath = path.resolve('fileSystemVisual.dot');
-        fs.writeFileSync('fileSystemVisual.dot', dotContent.join('\n'));
-        console.log(`\n✅ Результирующий файл сохранён по пути: ${emptyDirFilePath}`);
-        console.log('Используйте Graphviz для визуализации:\n\ndot -Tpng fileSystemVisual.dot -o diagram.png\n');
+        fs.writeFileSync('fileSystemVisual.dot', dotContent.join('
+'));
+        console.log(`
+✅ Результирующий файл сохранён по пути: ${emptyDirFilePath}`);
+        console.log('Используйте Graphviz для визуализации:
+
+dot -Tpng fileSystemVisual.dot -o diagram.png
+');
         return;
     }
     dotContent.push(`
@@ -80,12 +104,17 @@ function main(): void {
         depthLevel: 0,
         lastFolder: false
     }
-    createGraph(initialPosition, targetDirectory, dotContent)
-    dotContent.push(`\n}`);
+    createGraph(initialPosition, targetDirectory, dotContent, nameFormatter)
+    dotContent.push(`
+}`);
     const outputFilePath = path.resolve('fileSystemVisual.dot');
     fs.writeFileSync('./fileSystemVisual.dot', dotContent.join(''));
-    console.log(`\n✅ Результирующий файл сохранён по пути: ${outputFilePath}`);
-    console.log('Используйте Graphviz для визуализации:\n\ndot -Tpng fileSystemVisual.dot -o diagram.png\n');
+    console.log(`
+✅ Результирующий файл сохранён по пути: ${outputFilePath}`);
+    console.log('Используйте Graphviz для визуализации:
+
+dot -Tpng fileSystemVisual.dot -o diagram.png
+');
 }
 
 /**
@@ -93,15 +122,21 @@ function main(): void {
  * @param initialPosition - Текущая позиция узла.
  * @param targetDirectory - Путь к целевой директории.
  * @param dotContent - Массив строк для содержимого DOT-файла.
+ * @param nameFormatter - Функция форматирования имён узлов.
  */
-function createGraph(initialPosition: { hierarchyLevel: number, depthLevel: number }, targetDirectory: string, dotContent: string[]) {
+function createGraph(
+    initialPosition: { hierarchyLevel: number, depthLevel: number },
+    targetDirectory: string,
+    dotContent: string[],
+    nameFormatter: NameFormatterFn
+) {
     const directoryEntries = safeReadDirSync(targetDirectory);
     for (let i = 0; i < directoryEntries.length; i++) {
         const isLast = (i === directoryEntries.length - 1);
         // Помечаем текущий уровень глубины как активный,
         // если это НЕ последний элемент на этом уровне
         activeDepthLevels[initialPosition.depthLevel] = !isLast;
-        createSubGraph(initialPosition, directoryEntries[i], dotContent)
+        createSubGraph(initialPosition, directoryEntries[i], dotContent, nameFormatter)
     }
 }
 
@@ -110,19 +145,25 @@ function createGraph(initialPosition: { hierarchyLevel: number, depthLevel: numb
  * @param initialPosition - Текущая позиция узла.
  * @param name - Имя элемента.
  * @param dotContent - Массив строк для содержимого DOT-файла.
+ * @param nameFormatter - Функция форматирования имён узлов.
  */
-function createSubGraph(initialPosition: { hierarchyLevel: number, depthLevel: number }, name: string, dotContent: string[]) {
+function createSubGraph(
+    initialPosition: { hierarchyLevel: number, depthLevel: number },
+    name: string,
+    dotContent: string[],
+    nameFormatter: NameFormatterFn
+) {
     const isDir = fs.lstatSync(name).isDirectory()
     const currentDir = process.cwd()
     if (isDir) {
-        createLine(initialPosition, name, dotContent, FOLDER_NODE_STYLE)
+        createLine(initialPosition, name, dotContent, FOLDER_NODE_STYLE, nameFormatter)
         initialPosition.depthLevel++
         initialPosition.hierarchyLevel++
         process.chdir(name)
-        createGraph(initialPosition, process.cwd(), dotContent)
+        createGraph(initialPosition, process.cwd(), dotContent, nameFormatter)
         --initialPosition.depthLevel
     } else {
-        createLine(initialPosition, name, dotContent, FILE_NODE_STYLE)
+        createLine(initialPosition, name, dotContent, FILE_NODE_STYLE, nameFormatter)
         initialPosition.hierarchyLevel++
     }
     process.chdir(currentDir)
@@ -134,9 +175,15 @@ function createSubGraph(initialPosition: { hierarchyLevel: number, depthLevel: n
  * @param name - Имя элемента.
  * @param dotContent - Массив строк для содержимого DOT-файла.
  * @param options - Опции стилизации узла.
+ * @param nameFormatter - Функция форматирования имён узлов.
  */
-function createLine(initialPosition: { hierarchyLevel: number, depthLevel: number }, name: string, dotContent: string[], options: NodeStyleOptions) {
-
+function createLine(
+    initialPosition: { hierarchyLevel: number, depthLevel: number },
+    name: string,
+    dotContent: string[],
+    options: NodeStyleOptions,
+    nameFormatter: NameFormatterFn
+) {
     let hierarchyLevel = initialPosition.hierarchyLevel
     let depthLevel = initialPosition.depthLevel
 
@@ -156,7 +203,7 @@ ${commentSeparator(name, 90)}
     subgraph "${initialPosition.hierarchyLevel}-${initialPosition.depthLevel}" {
     rank=same;
     ${rootDownPoint} ${CONNECTOR_STYLE}
-    ${nodePoint} [label="${formatNodeLabel(name, truncateName)}",shape=${options.shape}, height=0.4, style=filled, fillcolor=${options.color}];
+    ${nodePoint} [label="${formatNodeLabel(name, nameFormatter)}",shape=${options.shape}, height=0.4, style=filled, fillcolor=${options.color}];
     }
         `)
 }
@@ -201,24 +248,42 @@ function truncateName(name: string, length: number): string {
 }
 
 /**
+ * Возвращает имя без изменений, игнорируя ограничение длины.
+ * Используется по умолчанию, когда флаг --cut не передан.
+ * 
+ * @param {string} name - Исходное имя файла или папки.
+ * @param {number} _length - Игнорируется.
+ * @returns {string} Исходное имя без изменений.
+ * 
+ * @example
+ * console.log(identityName("VeryLongFileName.txt", 10));
+ * // Вывод: "VeryLongFileName.txt"
+ */
+function identityName(name: string, _length: number): string {
+    return name;
+}
+
+/**
  * Форматирует метку узла графа, укорачивая имя и добавляя количество файлов в папке (если узел - папка).
  * 
  * @param {string} name - Имя файла или папки.
- * @param {(name: string, length: number) => string} nameShorterFnc - Функция для сокращения имени.
+ * @param {NameFormatterFn} nameShorterFnc - Функция для сокращения имени.
  * @returns {string} Отформатированная метка для узла графа.
  * 
  * @example
  * console.log(formatNodeLabel("MyFolder", truncateName));
- * // Возможный вывод: "MyFo...er\n(5)", если в папке 5 файлов
+ * // Возможный вывод: "MyFo...er
+(5)", если в папке 5 файлов
  */
 function formatNodeLabel(
     name: string,
-    nameShorterFnc: (name: string, length: number) => string
+    nameShorterFnc: NameFormatterFn
 ): string {
     const shortedName = nameShorterFnc(name, 16);
     if (fs.lstatSync(name).isDirectory()) {
         const filesCount = fs.readdirSync(name).length;
-        return `${shortedName}\\n(${filesCount})`;
+        return `${shortedName}\
+(${filesCount})`;
     } else {
         return shortedName;
     }
