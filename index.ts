@@ -7,22 +7,37 @@ import * as path from 'path';
 interface NodeStyleOptions {
     color: string
     shape: string
+    height: number
+    style: string
 }
+
+/**
+ * Высота узла для файлов
+ */
+const FILE_NODE_HEIGHT = 0.3;
+/**
+ * Высота узла для папок (в 1.5 раза больше файлов)
+ */
+const FOLDER_NODE_HEIGHT = FILE_NODE_HEIGHT * 1.5;
 
 /**
  * Стилизация узла для файлов
  */
-const FILE_NODE_STYLE = {
+const FILE_NODE_STYLE: NodeStyleOptions = {
     color: 'lightblue',
-    shape: 'box'
+    shape: 'box',
+    height: FILE_NODE_HEIGHT,
+    style: 'filled,rounded'
 }
 
 /**
  * Стилизация узла для папок
  */
-const FOLDER_NODE_STYLE = {
+const FOLDER_NODE_STYLE: NodeStyleOptions = {
     color: 'lightyellow',
-    shape: 'folder'
+    shape: 'folder',
+    height: FOLDER_NODE_HEIGHT,
+    style: 'filled'
 }
 
 /**
@@ -242,7 +257,9 @@ function createSubGraph(
         // Динамически определяем цвет по расширению файла
         const fileStyle: NodeStyleOptions = {
             shape: FILE_NODE_STYLE.shape,
-            color: getFileColor(name)
+            color: getFileColor(name),
+            height: FILE_NODE_HEIGHT,
+            style: FILE_NODE_STYLE.style
         };
         createLine(initialPosition, name, dotContent, fileStyle, nameFormatter);
         initialPosition.hierarchyLevel++;
@@ -287,8 +304,7 @@ ${commentSeparator(name, 90)}
     subgraph "${initialPosition.hierarchyLevel}-${initialPosition.depthLevel}" {
     rank=same;
     ${rootDownPoint} ${CONNECTOR_STYLE}
-    ${nodePoint} [label="${label}", shape=${options.shape}, height=0.3, width=${nodeWidth.toFixed(2)}, style=filled, fillcolor="${options.color}"];
-    }
+    ${nodePoint} [label="${label}", shape=${options.shape}, height=${options.height}, width=${nodeWidth.toFixed(2)}, style="${options.style}", fillcolor="${options.color}"];    }
         `);
 }
 
