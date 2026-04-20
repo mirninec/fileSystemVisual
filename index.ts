@@ -35,59 +35,58 @@ interface NodePosition {
 }
 
 /**
+ * Массив, отслеживающий активные (незакрытые) уровни глубины.
+ * Если activeDepthLevels[d] === true, значит на глубине d ещё есть
+ * элементы для отображения и нужно тянуть вертикальную линию.
+ */
+const activeDepthLevels: boolean[] = [];
+
+/**
  * Стиль соединительных элементов в графе
  */
 const CONNECTOR_STYLE = '[shape=point; width=0.03; style="filled"; fillcolor="black"];'
-// const CONNECTOR_STYLE = '[shape=diamond; width=0.03; style="filled"; fillcolor="lightgreen"];'
 
 /**
  * Основная функция программы. Строит граф файловой системы в формате DOT.
  */
-
 function main(): void {
     let targetDirectory: string = process.argv[2] || process.cwd();
     let currentDir: string = truncateName(path.basename(targetDirectory), 18);
     process.chdir(targetDirectory)
     console.log(targetDirectory)
-
     let dotContent: string[] = [
         `digraph FileSystem {
-
     rankdir = TB;
     edge [arrowhead = none];
     node [ fontname = "monospace"; width = 2; height = 0.75; style = "filled"; fillcolor = "lightyellow";]; 
     `
     ];
-
     let directoryEntries: string[] = fs.readdirSync(targetDirectory);
-
     if (directoryEntries.length === 0) {
         dotContent.push(`
     "trunk0" [label="папка\\nпуста";shape="folder";rank="min";];
 }`);
-        fs.writeFileSync('fileSystemVesual.dot', dotContent.join('\n'));
+        const emptyDirFilePath = path.resolve('fileSystemVisual.dot');
+        fs.writeFileSync('fileSystemVisual.dot', dotContent.join('\n'));
+        console.log(`\n✅ Результирующий файл сохранён по пути: ${emptyDirFilePath}`);
+        console.log('Используйте Graphviz для визуализации:\n\ndot -Tpng fileSystemVisual.dot -o diagram.png\n');
         return;
     }
-
     dotContent.push(`
     "0-0" [label="./${currentDir}";width = 2.5; shape="folder";rank="min";];
 `);
-
     const initialPosition: NodePosition = {
         hierarchyLevel: 1,
         depthLevel: 0,
         lastFolder: false
     }
-
     createGraph(initialPosition, targetDirectory, dotContent)
-
     dotContent.push(`\n}`);
+    const outputFilePath = path.resolve('fileSystemVisual.dot');
     fs.writeFileSync('./fileSystemVisual.dot', dotContent.join(''));
-
-    console.log('\n✅ DOT-файл "fileSystemVisual.dot" успешно сгенерирован. Используйте Graphviz для визуализации:\n\ndot -Tpng fileSystemVisual.dot -o diagram.png\n');
-
+    console.log(`\n✅ Результирующий файл сохранён по пути: ${outputFilePath}`);
+    console.log('Используйте Graphviz для визуализации:\n\ndot -Tpng fileSystemVisual.dot -o diagram.png\n');
 }
-
 
 /**
  * Рекурсивно строит граф файловой системы.
@@ -96,11 +95,12 @@ function main(): void {
  * @param dotContent - Массив строк для содержимого DOT-файла.
  */
 function createGraph(initialPosition: { hierarchyLevel: number, depthLevel: number }, targetDirectory: string, dotContent: string[]) {
-
     const directoryEntries = safeReadDirSync(targetDirectory);
-
     for (let i = 0; i < directoryEntries.length; i++) {
-
+        const isLast = (i === directoryEntries.length - 1);
+        // Помечаем текущий уровень глубины как активный,
+        // если это НЕ последний элемент на этом уровне
+        activeDepthLevels[initialPosition.depthLevel] = !isLast;
         createSubGraph(initialPosition, directoryEntries[i], dotContent)
     }
 }
@@ -112,30 +112,19 @@ function createGraph(initialPosition: { hierarchyLevel: number, depthLevel: numb
  * @param dotContent - Массив строк для содержимого DOT-файла.
  */
 function createSubGraph(initialPosition: { hierarchyLevel: number, depthLevel: number }, name: string, dotContent: string[]) {
-
     const isDir = fs.lstatSync(name).isDirectory()
     const currentDir = process.cwd()
-
     if (isDir) {
-
         createLine(initialPosition, name, dotContent, FOLDER_NODE_STYLE)
-
         initialPosition.depthLevel++
         initialPosition.hierarchyLevel++
-
         process.chdir(name)
-
         createGraph(initialPosition, process.cwd(), dotContent)
-
         --initialPosition.depthLevel
-
     } else {
-
         createLine(initialPosition, name, dotContent, FILE_NODE_STYLE)
-
         initialPosition.hierarchyLevel++
     }
-
     process.chdir(currentDir)
 }
 
@@ -177,25 +166,21 @@ ${commentSeparator(name, 90)}
  * 
  * @param {NodePosition} initialPosition - Позиция узла в иерархии.
  * @param {string[]} dotContent - Массив строк, содержащий код графа в формате DOT.
- *
  */
 function createHelpPoints(initialPosition: { hierarchyLevel: number, depthLevel: number }, dotContent: string[]) {
-
     if (initialPosition.depthLevel === 0) return
-
-    let helpPopintLevel = initialPosition.hierarchyLevel
-    let helpPointDept = "0"
-
-    let localLevel = helpPopintLevel
-    let localDept = helpPointDept
-
-    let helpPoint = `${--localLevel}-${localDept}`
-    let helpPointUp = `${++localLevel}-${localDept}`
-
-    dotContent.push(`
-    "${helpPointUp}"  ${CONNECTOR_STYLE}
-    "${helpPoint}" -> "${helpPointUp}"; 
+    for (let d = 0; d < initialPosition.depthLevel; d++) {
+        // Пропускаем уровни, на которых больше нет элементов
+        if (!activeDepthLevels[d]) continue;
+        let localLevel = initialPosition.hierarchyLevel
+        let localDept = d
+        let helpPoint = `${localLevel - 1}-${localDept}`
+        let helpPointDown = `${localLevel}-${localDept}`
+        dotContent.push(`
+    "${helpPointDown}"  ${CONNECTOR_STYLE}
+    "${helpPoint}" -> "${helpPointDown}"; 
             `)
+    }
 }
 
 /**
